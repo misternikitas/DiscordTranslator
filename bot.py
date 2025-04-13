@@ -1,12 +1,14 @@
 import discord
-from googletrans import Translator
+import deepl
 from discord.ext import commands
 from dotenv import load_dotenv
 load_dotenv()
 import os
 import asyncio #auto delete messages
 
-translator = Translator()
+DEEPL_AUTH_KEY = os.getenv("DEEPL_API_KEY")
+
+translator = deepl.Translator(DEEPL_AUTH_KEY)
 intents = discord.Intents.default()
 intents.message_content = True
 intents.reactions = True
@@ -16,18 +18,18 @@ intents.messages = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 FLAG_LANG_MAP = {
-    "🇫🇷": "fr",
-    "🇪🇸": "es",
-    "🇯🇵": "ja",
-    "🇩🇪": "de",
-    "🇨🇳": "zh-cn",
-    "🇷🇺": "ru",
-    "🇮🇹": "it",
-    "🇰🇷": "ko",
-    "🇺🇸": "en",
-    "🇬🇧": "en",
-    "🇬🇷": "el",
-    "🇸🇦": "ar",
+    "🇫🇷": "FR",
+    "🇪🇸": "ES",
+    "🇯🇵": "JA",
+    "🇩🇪": "DE",
+    "🇨🇳": "ZH",
+    "🇷🇺": "RU",
+    "🇮🇹": "IT",
+    "🇰🇷": "KO",
+    "🇺🇸": "EN-US",
+    "🇬🇧": "EN-GB",
+    "🇬🇷": "EL",
+    "🇸🇦": "AR",
 }
 
 @bot.event
@@ -48,7 +50,7 @@ async def on_raw_reaction_add(payload):
         return
 
     try:
-        translated = await translator.translate(message.content, dest=lang)
+        translated = translator.translate_text(message.content, target_lang=lang.upper())
     except Exception as e:
         await channel.send(f"Translation failed: {e}")
         return
@@ -59,12 +61,13 @@ async def on_raw_reaction_add(payload):
         color=discord.Color.blue()
     )
     embed.set_footer(text=f"Original by {message.author.display_name}")
-    
+
     # Send the embed as a response
     translated_message = await channel.send(embed=embed)
 
     # Auto-delete the translated message after 30 seconds
     await asyncio.sleep(30)
     await translated_message.delete()
+
 
 bot.run(os.getenv("BOT_TOKEN"))
